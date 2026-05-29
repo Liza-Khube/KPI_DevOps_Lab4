@@ -1,0 +1,70 @@
+---
+- name: Ensure reliable DNS is configured
+  ansible.builtin.copy:
+    dest: /etc/resolv.conf
+    content: "nameserver 8.8.8.8\n"
+    mode: '0644'
+    force: true
+
+- name: Install common packages
+  ansible.builtin.apt:
+    name:
+      - curl
+      - ufw
+    state: present
+    update_cache: true
+    cache_valid_time: 3600
+
+- name: Create student user
+  ansible.builtin.user:
+    name: student
+    shell: /bin/bash
+    groups: sudo
+    create_home: yes
+
+- name: Create gradebook for student
+  ansible.builtin.copy:
+    content: "25\n"
+    dest: /home/student/gradebook
+    owner: student
+    group: student
+    mode: '0644'
+
+- name: Create teacher user
+  ansible.builtin.user:
+    name: teacher
+    shell: /bin/bash
+    groups: sudo
+    append: true
+    create_home: true
+    state: present
+    password: "{{ default_user_password | password_hash('sha512') }}"
+    update_password: always
+
+- name: Enable SSH password authentication
+  ansible.builtin.lineinfile:
+    path: /etc/ssh/sshd_config
+    regexp: '^#?PasswordAuthentication'
+    line: 'PasswordAuthentication yes'
+    state: present
+  notify: Restart ssh
+
+- name: Enable SSH keyboard-interactive authentication (required for password login on Ubuntu 24.04)
+  ansible.builtin.lineinfile:
+    path: /etc/ssh/sshd_config
+    regexp: '^#?KbdInteractiveAuthentication'
+    line: 'KbdInteractiveAuthentication yes'
+    state: present
+  notify: Restart ssh
+
+- name: Allow SSH connections through UFW
+  community.general.ufw:
+    rule: allow
+    port: '22'
+    proto: tcp
+
+- name: Enable UFW with default deny policy
+  community.general.ufw:
+    state: enabled
+    policy: deny
+    direction: incoming
