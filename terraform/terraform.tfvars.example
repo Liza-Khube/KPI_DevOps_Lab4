@@ -1,0 +1,9 @@
+# Rename this file to terraform.tfvars and fill in the values.
+# terraform.tfvars is listed in .gitignore — never commit it.
+
+# Paste the content of your public SSH key (e.g. ~/.ssh/id_ed25519.pub)
+ssh_public_key = "ssh-ed25519 AAAA... some_user@example"
+
+network_cidr = "192.168.100.0/24"
+
+db_password = "mySecretPasswd"
