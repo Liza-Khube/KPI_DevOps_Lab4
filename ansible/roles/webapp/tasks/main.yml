@@ -23,7 +23,7 @@
     name: operator
     shell: /bin/bash
     create_home: true
-    password: "{{ default_user_password | password_hash('sha512') }}"
+    password: "{{ default_user_password | password_hash('sha512', 'mywebappSalt') }}"
     update_password: always
     state: present
 

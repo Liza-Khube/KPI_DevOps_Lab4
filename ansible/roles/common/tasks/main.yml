@@ -38,7 +38,7 @@
     append: true
     create_home: true
     state: present
-    password: "{{ default_user_password | password_hash('sha512') }}"
+    password: "{{ default_user_password | password_hash('sha512', 'mywebappSalt') }}"
     update_password: always
 
 - name: Enable SSH password authentication
