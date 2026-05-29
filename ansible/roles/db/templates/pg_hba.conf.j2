@@ -1,0 +1,5 @@
+local   all             postgres                                peer
+
+host    {{ db_name }}   {{ db_user }}   {{ worker_ip }}/32      scram-sha-256
+
+host    all             all             0.0.0.0/0               reject

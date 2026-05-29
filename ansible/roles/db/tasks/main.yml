@@ -1,0 +1,62 @@
+---
+- name: Set system hostname for Database
+  ansible.builtin.hostname:
+    name: db
+
+- name: Fix sudo warning for Database
+  ansible.builtin.lineinfile:
+    path: /etc/hosts
+    regexp: '^127\.0\.1\.1'
+    line: '127.0.1.1 db'
+    state: present
+
+- name: Install PostgreSQL
+  ansible.builtin.apt:
+    name:
+      - postgresql
+      - python3-psycopg2
+    state: present
+    update_cache: true
+
+- name: Set PostgreSQL listen_addresses
+  ansible.builtin.lineinfile:
+    path: /etc/postgresql/{{ postgresql_version }}/main/postgresql.conf
+    regexp: '^#?listen_addresses'
+    line: "listen_addresses = '*'"
+  notify: Restart postgresql
+
+- name: Using the pg_hba.conf template
+  template:
+    src: pg_hba.conf.j2
+    dest: /etc/postgresql/{{ postgresql_version }}/main/pg_hba.conf
+    owner: postgres
+    group: postgres
+    mode: '0640'
+  notify: Restart postgresql
+
+- name: Ensure PostgreSQL service is enabled and started
+  ansible.builtin.systemd:
+    name: postgresql
+    enabled: true
+
+- name: Restart PostgreSQL before creating the database
+  meta: flush_handlers
+
+- name: Create PostgreSQL database
+  postgresql_db:
+    name: '{{ db_name }}'
+  become_user: postgres
+
+- name: Create PostgreSQL user
+  postgresql_user:
+    name: '{{ db_user }}'
+    password: '{{ db_password }}'
+    db: '{{ db_name }}'
+  become_user: postgres
+
+- name: Allow PostgreSQL access ONLY from worker VM
+  community.general.ufw:
+    rule: allow
+    port: '5432'
+    proto: tcp
+    src: '{{ worker_ip }}'
