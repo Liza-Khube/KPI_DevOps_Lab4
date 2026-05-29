@@ -1,0 +1,20 @@
+[Unit]
+Description=mywebapp Task Tracker
+After=network.target
+
+[Service]
+User=app
+Group=app
+
+WorkingDirectory={{ app_dir }}
+
+ExecStartPre=/usr/bin/node {{ app_dir }}/migration.js
+ExecStart=/usr/bin/node {{ app_dir }}/server.js
+
+Environment=CONFIG_PATH={{ app_config_dir }}/config.json
+
+Restart=on-failure
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target
